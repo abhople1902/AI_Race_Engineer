@@ -1,0 +1,8 @@
+fastf1==3.0.0
+numpy<2.0
+pandas
+flask
+python-dotenv
+gunicorn
+requests
+confluent-kafka>=2.12.0

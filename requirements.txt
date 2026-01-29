@@ -1,0 +1,7 @@
+fastf1==3.0.0
+numpy<2.0
+pandas
+google-cloud-pubsub>=2.33.0
+flask
+python-dotenv
+gunicorn
