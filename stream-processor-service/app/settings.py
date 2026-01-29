@@ -14,3 +14,5 @@ RAW_TOPICS = [
 ]
 
 NORMALIZED_TOPIC = "f1.intervals.normalized"
+
+LEADERBOARD_TOPIC = "f1.leaderboard.events"

@@ -60,7 +60,7 @@ class RawEventConsumer:
     def poll_batch(
         self,
         max_messages: int = 200,
-        timeout: float = 1.0,
+        timeout: float = 3.0,
     ) -> List[Dict[str, Any]]:
         """
         Poll Kafka for a batch of messages and return

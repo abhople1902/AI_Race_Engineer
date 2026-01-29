@@ -7,6 +7,11 @@ from typing import List, Dict, Any
 from app.interval_normalizer.normalizer import IntervalNormalizer
 from app.consumer import RawEventConsumer
 from app.producer import NormalizedEventProducer
+
+from app.leaderboard.builder import LeaderboardBuilder
+from app.leaderboard.state import LeaderboardState
+from app.leaderboard.emitter import format_leaderboard
+
 from app.settings import KAFKA_BOOTSTRAP_SERVERS
 
 # Optional: keep assertions during early live testing
@@ -27,6 +32,10 @@ def main():
     # =========================
 
     normalizer = IntervalNormalizer(session_key=None)
+
+    leaderboard_state = LeaderboardState()
+    leaderboard_builder = LeaderboardBuilder(leaderboard_state)
+
     consumer = RawEventConsumer(group_id="interval-normalizer-debug2")
     producer = NormalizedEventProducer()
 
@@ -51,7 +60,7 @@ def main():
     while running:
         try:
             # ---- Batch poll ----
-            events: List[Dict[str, Any]] = consumer.poll_batch(max_messages=100, timeout=3.0)
+            events: List[Dict[str, Any]] = consumer.poll_batch(max_messages=200, timeout=3.0)
 
             if not events:
                 print("[consumer] no new messages")
@@ -75,7 +84,13 @@ def main():
                             strict=True,
                         )
                     print(f"[consumer] producing to kafka: {result}\n")
-                    producer.send(result)
+                    producer.send_normalized(result)
+
+                    leaderboard_event = leaderboard_builder.process_event(result)
+                    if leaderboard_event is not None:
+                        producer.send_leaderboard(
+                            format_leaderboard(leaderboard_event)
+                        )
                 else:
                     print("❌❌❌❌result is none")
 

@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from confluent_kafka import Producer
 
-from app.settings import KAFKA_BOOTSTRAP_SERVERS, NORMALIZED_TOPIC
+from app.settings import KAFKA_BOOTSTRAP_SERVERS, LEADERBOARD_TOPIC, NORMALIZED_TOPIC
 
 
 class NormalizedEventProducer:
@@ -18,7 +18,7 @@ class NormalizedEventProducer:
             "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
         })
 
-    def send(self, record: Dict[str, Any]) -> None:
+    def send_normalized(self, record: Dict[str, Any]) -> None:
         # Convert datetime → ISO string
         payload = dict(record)
         if hasattr(payload.get("event_time"), "isoformat"):
@@ -31,6 +31,15 @@ class NormalizedEventProducer:
 
         # Non-blocking flush for low-volume stream
         self.producer.poll(0)
+
+    def send_leaderboard(self, event: dict):
+        self.producer.produce(
+            topic=LEADERBOARD_TOPIC,
+            value=json.dumps(event).encode("utf-8"),
+        )
+
+        self.producer.poll(0)
+
 
     def flush(self):
         self.producer.flush()
