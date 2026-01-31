@@ -33,11 +33,14 @@ class NormalizedEventProducer:
         self.producer.poll(0)
 
     def send_leaderboard(self, event: dict):
+        payload = dict(event)
+        if hasattr(payload.get("event_time"), "isoformat"):
+            payload["event_time"] = payload["event_time"].isoformat()
+
         self.producer.produce(
             topic=LEADERBOARD_TOPIC,
-            value=json.dumps(event).encode("utf-8"),
+            value=json.dumps(payload).encode("utf-8"),
         )
-
         self.producer.poll(0)
 
 
