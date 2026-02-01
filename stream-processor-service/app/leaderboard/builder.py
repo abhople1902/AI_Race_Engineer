@@ -56,6 +56,12 @@ class LeaderboardBuilder:
             if lap < self.state.current_lap - 1:
                 return None
 
+        # For backmarkers
+        if isinstance(gap, str):
+            gap = float("inf")
+        elif gap is None:
+            gap = float("inf")
+
         # --- Update driver snapshot ---
         self.state.drivers[driver] = DriverSnapshot(
             driver_number=driver,
