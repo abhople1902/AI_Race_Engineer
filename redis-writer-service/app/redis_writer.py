@@ -10,7 +10,30 @@ class RedisWriter:
         leaderboard_key = f"session:{session_id}:leaderboard"
         meta_key = f"session:{session_id}:meta"
 
+        active_drivers = {
+            str(entry["driver_number"])
+            for entry in event["standings"]
+        }
+
         pipe = self.redis.pipeline(transaction=True)
+
+
+        # Handling retired drivers
+        existing_drivers = self.redis.zrange(leaderboard_key, 0, -1)
+        retired_drivers = set(existing_drivers) - active_drivers
+
+        if retired_drivers:
+            pipe.zrem(leaderboard_key, *retired_drivers)
+
+            for driver in retired_drivers:
+                pipe.hset(
+                    f"session:{session_id}:driver:{driver}",
+                    mapping={
+                        "status": "RETIRED",
+                        "updated_at": event["event_time"],
+                    }
+                )
+
 
         for entry in event["standings"]:
             driver_number = str(entry["driver_number"])
