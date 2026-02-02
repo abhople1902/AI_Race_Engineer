@@ -158,11 +158,9 @@ from app.producer import NormalizedEventProducer
 from app.leaderboard.builder import LeaderboardBuilder
 from app.leaderboard.state import LeaderboardState
 from app.leaderboard.emitter import format_leaderboard
-from app.redis_writer import RedisWriter
 
 from app.settings import KAFKA_BOOTSTRAP_SERVERS
 
-from redis import Redis
 import os
 
 DEBUG_ASSERTIONS = True
@@ -172,11 +170,6 @@ except ImportError:
     validate_output = None
     DEBUG_ASSERTIONS = False
 
-redis_client = Redis(
-    host=os.getenv("REDIS_HOST", "localhost"),
-    port=int(os.getenv("REDIS_PORT", "6379")),
-    decode_responses=True
-)
 
 def main():
     print("Starting Stream Processor Service")
@@ -195,15 +188,6 @@ def main():
     leaderboard_state = LeaderboardState()
     leaderboard_builder = LeaderboardBuilder(leaderboard_state)
     normalized_consumer = NormalizedEventConsumer(group_id="leaderboard-builder")
-
-    redis_writer = RedisWriter(redis_client)
-
-    try:
-        redis_client.ping()
-        print("Redis connection OK")
-    except Exception as e:
-        print(f"[FATAL] Redis not available: {e}")
-        sys.exit(1)
 
     running = True
 
@@ -242,7 +226,6 @@ def main():
                 if leaderboard_event is not None:
                     formatted = format_leaderboard(leaderboard_event)
                     producer.send_leaderboard(formatted)
-                    redis_writer.write_leaderboard(formatted)
 
             if normalized_events:
                 normalized_consumer.commit()

@@ -3,20 +3,24 @@ class RedisWriter:
         self.redis = redis_client
 
     def write_leaderboard(self, event: dict):
-        session_id = event["session_key"]
+        session_id = event.get("session_key")
+        if session_id is None:
+            raise ValueError("Leaderboard event missing session_key")
+
         leaderboard_key = f"session:{session_id}:leaderboard"
         meta_key = f"session:{session_id}:meta"
 
         pipe = self.redis.pipeline(transaction=True)
 
-        # Leaderboard
         for entry in event["standings"]:
+            driver_number = str(entry["driver_number"])
+
             pipe.zadd(
                 leaderboard_key,
-                {str(entry["driver_number"]): entry["position"]}
+                {driver_number: entry["position"]}
             )
 
-            driver_key = f"session:{session_id}:driver:{entry['driver_number']}"
+            driver_key = f"session:{session_id}:driver:{driver_number}"
             pipe.hset(
                 driver_key,
                 mapping={
@@ -28,7 +32,6 @@ class RedisWriter:
                 }
             )
 
-        # Session meta
         pipe.hset(
             meta_key,
             mapping={

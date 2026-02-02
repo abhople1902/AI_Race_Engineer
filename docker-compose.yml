@@ -30,9 +30,30 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      REDIS_PORT: 6379
     depends_on:
       kafka: 
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - f1-network
+
+
+
+
+  redis-writer:
+    build:
+      context: ./redis-writer-service
+      dockerfile: Dockerfile
+    container_name: redis-writer-service
+    restart: always
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      kafka:
         condition: service_healthy
       redis:
         condition: service_started
