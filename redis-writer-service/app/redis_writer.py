@@ -2,6 +2,28 @@ class RedisWriter:
     def __init__(self, redis_client):
         self.redis = redis_client
 
+    
+    def write_stint_state(
+        self,
+        session_id: int,
+        driver_number: int,
+        stint: dict,
+        lap_number: int,
+    ):
+        key = f"session:{session_id}:driver:{driver_number}:stint"
+
+        self.redis.hset(
+            key,
+            mapping={
+                "stint_number": stint["stint_number"],
+                "compound": stint["compound"],
+                "stint_lap_start": stint["lap_start"],
+                "last_pit_lap": stint["lap_start"] - 1,
+                "tyre_age_at_start": stint["tyre_age_at_start"],
+            }
+        )
+
+
     def write_leaderboard(self, event: dict):
         session_id = event.get("session_key")
         if session_id is None:

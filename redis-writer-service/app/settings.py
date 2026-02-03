@@ -5,6 +5,8 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv(
     "kafka:9092"
 )
 
+OPENF1_BASE_URL = "https://api.openf1.org/v1/"
+
 LEADERBOARD_TOPIC = os.getenv(
     "LEADERBOARD_TOPIC",
     "f1.leaderboard.events"
