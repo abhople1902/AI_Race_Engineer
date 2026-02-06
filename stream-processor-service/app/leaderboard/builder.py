@@ -26,6 +26,17 @@ class LeaderboardBuilder:
         gap = event["gap_to_leader"]
         confidence = event["confidence"]
         event_time: datetime = event["event_time"]
+        interval = event.get("interval")
+        if interval is None:
+            interval = 0.0
+        elif isinstance(interval, str):
+            if interval.strip().lower() in {"null", "none", ""}:
+                interval = 0.0
+            else:
+                try:
+                    interval = float(interval)
+                except ValueError:
+                    interval = 0.0
 
         if self.state.session_key is None:
             self.state.session_key = session_key
@@ -66,6 +77,7 @@ class LeaderboardBuilder:
         self.state.drivers[driver] = DriverSnapshot(
             driver_number=driver,
             gap_to_leader=gap,
+            interval=interval,
             lap_number=lap,
             confidence=confidence,
             last_event_time=event_time,
@@ -105,6 +117,7 @@ class LeaderboardBuilder:
                     position=idx + 1,
                     driver_number=d.driver_number,
                     gap_to_leader=d.gap_to_leader,
+                    interval=d.interval
                 )
             )
 

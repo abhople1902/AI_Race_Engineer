@@ -160,6 +160,7 @@ class IntervalNormalizer:
             "gap_to_leader": (
                 LEADER_GAP_VALUE if is_leader else resolution.gap
             ),
+            "interval": raw_interval,
             "confidence": resolution.confidence.value,
             "leader_driver_number": self.session_state.current_leader_driver,
             "is_leader": is_leader,

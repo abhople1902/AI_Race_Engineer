@@ -71,6 +71,7 @@ class RedisWriter:
                 mapping={
                     "position": entry["position"],
                     "gap_to_leader": entry["gap_to_leader"],
+                    "interval_to_ahead": entry["interval"],
                     "lap_number": event["lap_number"],
                     "status": "RUNNING",
                     "updated_at": event["event_time"],

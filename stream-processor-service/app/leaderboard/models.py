@@ -9,6 +9,7 @@ from typing import Optional
 class DriverSnapshot:
     driver_number: int
     gap_to_leader: float
+    interval: float
     lap_number: int
     confidence: str
     last_event_time: datetime
@@ -19,3 +20,4 @@ class LeaderboardEntry:
     position: int
     driver_number: int
     gap_to_leader: float
+    interval: float
