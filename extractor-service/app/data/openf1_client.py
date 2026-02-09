@@ -8,8 +8,8 @@ class OpenF1Client:
         self.session_key = Config.SESSION_KEY
         self.polling_step = timedelta(seconds=Config.POLL_INTERVAL_SEC)
 
-        self.timestamp_lower = self._get_first_timestamp()
-        # self.timestamp_lower = datetime.fromisoformat("2025-11-09T17:02:00.022000+00:00")
+        # self.timestamp_lower = self._get_first_timestamp()
+        self.timestamp_lower = datetime.fromisoformat("2025-11-09T17:01:00.022000+00:00")
 
         self.timestamp_upper = self.timestamp_lower + self.polling_step
 

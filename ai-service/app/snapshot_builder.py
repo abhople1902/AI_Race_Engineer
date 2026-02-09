@@ -106,7 +106,7 @@ class AISnapshotBuilder:
             "context": {
                 "laps_since_pit": laps_since_pit,
                 "is_in_clean_air": (
-                    interval is None
+                    interval == 0.0
                     or interval >= CLEAN_AIR_INTERVAL_THRESHOLD
                 ),
             },

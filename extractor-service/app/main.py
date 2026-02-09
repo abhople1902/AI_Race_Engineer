@@ -1,8 +1,5 @@
 from data.openf1_client import OpenF1Client
 from utils.config import Config
-# from utils.state_cache import StateCache
-# from polling.leader_tracker import get_leader_lap_number
-# from emitter.snapshot_builder import build_snapshot
 from emitter.kafka_producer import KafkaProducerWrapper
 import time
 

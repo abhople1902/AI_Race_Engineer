@@ -1,0 +1,95 @@
+{
+  "session": {
+    "session_key": 9869,
+    "lap": 1,
+    "cars_running": 20
+  },
+  "drivers": [
+    {
+      "driver_number": 4,
+      "position": 1,
+      "gap_to_leader": 0.0,
+      "interval_to_ahead": 0.0,
+      "stint": {
+        "stint_number": 1,
+        "compound": "MEDIUM",
+        "stint_lap_start": 1,
+        "last_pit_lap": 0,
+        "tyre_age_now": 0
+      },
+      "context": {
+        "laps_since_pit": 1,
+        "is_in_clean_air": true
+      }
+    },
+    {
+      "driver_number": 30,
+      "position": 6,
+      "gap_to_leader": 3.897,
+      "interval_to_ahead": 0.525,
+      "stint": {
+        "stint_number": 1,
+        "compound": "SOFT",
+        "stint_lap_start": 1,
+        "last_pit_lap": 0,
+        "tyre_age_now": 3
+      },
+      "context": {
+        "laps_since_pit": 1,
+        "is_in_clean_air": false
+      }
+    }
+  ],
+  "leaderboard_context": {
+    "window": {
+      "around_drivers": [4, 30],
+      "positions": [
+        {
+          "driver_number": 4,
+          "position": 1,
+          "gap_to_leader": 0.0
+        },
+        {
+          "driver_number": 12,
+          "position": 2,
+          "gap_to_leader": 1.046
+        },
+        {
+          "driver_number": 16,
+          "position": 3,
+          "gap_to_leader": 1.611
+        },
+        {
+          "driver_number": 81,
+          "position": 4,
+          "gap_to_leader": 2.597
+        },
+        {
+          "driver_number": 6,
+          "position": 5,
+          "gap_to_leader": 3.372
+        },
+        {
+          "driver_number": 30,
+          "position": 6,
+          "gap_to_leader": 3.897
+        },
+        {
+          "driver_number": 63,
+          "position": 7,
+          "gap_to_leader": 4.314
+        },
+        {
+          "driver_number": 10,
+          "position": 8,
+          "gap_to_leader": 5.179
+        }
+      ]
+    },
+    "field_summary": {
+      "cars_running": 20,
+      "median_gap": 6.28,
+      "train_density": "HIGH"
+    }
+  }
+}
