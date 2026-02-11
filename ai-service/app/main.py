@@ -8,7 +8,7 @@ redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 # Build snapshot
 builder = AISnapshotBuilder(redis)
-drivers = [4, 63]
+drivers = [1, 12]
 
 snapshot = builder.build_snapshot(
     session_id=9869,

@@ -68,10 +68,9 @@ class LeaderboardBuilder:
                 return None
 
         # For backmarkers
-        if isinstance(gap, str):
-            gap = float("inf")
-        elif gap is None:
-            gap = float("inf")
+        if isinstance(gap, str) or gap is None:
+            gap = self.state.backmarker_gap_next
+            self.state.backmarker_gap_next -= self.state.backmarker_gap_step
 
         # --- Update driver snapshot ---
         self.state.drivers[driver] = DriverSnapshot(

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import LeaderboardTable from "@/components/LeaderboardTable"
 import { fetchLeaderboard } from "@/lib/fetcher"
+import AIPanel from "@/components/AIPanel"
 
 const SESSION_KEY = "9869"
 
@@ -32,10 +33,14 @@ export default function Home() {
       <div className="h-full grid grid-rows-[70%_30%] gap-4">
         {/* AI PANEL */}
         <div className="rounded-lg border border-dashed border-gray-700 flex items-center justify-center text-gray-500">
-          AI Insights Panel (Phase 4)
+          <AIPanel
+            sessionId={9869}
+            availableDrivers={data.leaderboard.map(d => d.driver_number)}
+          />
+
         </div>
 
-        {/* RACE CONTROL */}
+        { }
         <div className="rounded-lg border border-gray-800 bg-gray-950 text-sm text-gray-400 flex items-center justify-center">
           Race control messages (Kafka later)
         </div>

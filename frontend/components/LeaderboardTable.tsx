@@ -61,7 +61,9 @@ export default function LeaderboardTable({ data }: Props) {
                 <td className="px-3 py-1 text-right whitespace-nowrap">
                   {row.gap_to_leader === 0
                     ? "—"
-                    : `+${row.gap_to_leader.toFixed(3)}`}
+                    : row.gap_to_leader > 100
+                      ? "LAPPED"
+                      : `+${row.gap_to_leader.toFixed(3)}`}
                 </td>
 
                 <td className="px-3 py-1 text-right whitespace-nowrap">
