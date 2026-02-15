@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from redis import Redis
@@ -38,6 +40,7 @@ def predict(req: PredictionRequest):
         )
         return result
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=str(e),
