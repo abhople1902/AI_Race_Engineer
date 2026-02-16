@@ -1,3 +1,5 @@
+import json
+
 class RedisWriter:
     def __init__(self, redis_client):
         self.redis = redis_client
@@ -22,6 +24,22 @@ class RedisWriter:
                 "tyre_age_at_start": stint["tyre_age_at_start"],
             }
         )
+
+
+    def write_race_control(self, event: dict):
+        session_id = event.get("session_key")
+        if session_id is None:
+            return
+
+        key = f"session:{session_id}:race_control"
+
+        pipe = self.redis.pipeline(transaction=True)
+
+        pipe.lpush(key, json.dumps(event))
+        pipe.ltrim(key, 0, 99)
+
+        pipe.execute()
+
 
 
     def write_leaderboard(self, event: dict):

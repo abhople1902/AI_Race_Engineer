@@ -5,6 +5,7 @@ import { useState } from "react"
 import LeaderboardTable from "@/components/LeaderboardTable"
 import { fetchLeaderboard } from "@/lib/fetcher"
 import AIPanel from "@/components/AIPanel"
+import RaceControlDrawer from "@/components/RaceControlDrawer"
 
 const SESSION_KEY = "9869"
 
@@ -43,8 +44,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen grid grid-cols-[40%_60%] gap-4 p-4">
-      {/* Leaderboard */}
+    <div className="grid h-screen grid-cols-[40%_60%] gap-4 overflow-hidden p-4">
       <div className="h-full">
         <LeaderboardTable
           data={data.leaderboard}
@@ -53,8 +53,7 @@ export default function Home() {
         />
       </div>
 
-      {/* AI + Race Control */}
-      <div className="relative h-full">
+      <div className="relative h-full overflow-hidden">
         <div className="h-full rounded-lg border border-gray-700">
           <AIPanel
             sessionId={9869}
@@ -62,24 +61,11 @@ export default function Home() {
           />
         </div>
 
-        <div
-          className={`absolute bottom-0 left-0 right-0 bg-gray-950 border-t border-gray-800 transition-transform duration-300 ${raceControlOpen
-              ? "translate-y-0"
-              : "translate-y-[85%]"
-            }`}
-          style={{ height: "30vh" }}
-        >
-          <div
-            className="flex items-center justify-center py-2 cursor-pointer text-gray-400 text-sm"
-            onClick={() => setRaceControlOpen(!raceControlOpen)}
-          >
-            ↑ Race Control
-          </div>
-
-          <div className="p-4 text-gray-400 text-sm">
-            Race control messages (Kafka later)
-          </div>
-        </div>
+        <RaceControlDrawer
+          sessionKey={SESSION_KEY}
+          isOpen={raceControlOpen}
+          onToggle={() => setRaceControlOpen((prev) => !prev)}
+        />
       </div>
     </div>
   )

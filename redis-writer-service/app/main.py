@@ -5,6 +5,7 @@ from redis import Redis
 
 from app.consumer_leaderboard import LeaderboardEventConsumer
 from app.redis_writer import RedisWriter
+from app.consumer_race_control import RaceControlConsumer
 from app.settings import REDIS_HOST, REDIS_PORT
 
 from app.stint_ingestor import StintIngestor
@@ -35,6 +36,10 @@ def main():
     consumer = LeaderboardEventConsumer(
         group_id="redis-writer"
     )
+    race_control_consumer = RaceControlConsumer(
+        group_id="redis-writer-race-control"
+    )
+
     writer = RedisWriter(redis_client)
 
     running = True
@@ -49,6 +54,8 @@ def main():
     while running:
         try:
             events = consumer.poll_batch(max_messages=200, timeout=1.0)
+
+            rc_events = race_control_consumer.poll_batch(max_messages=200, timeout=0.5)
 
             for event in events:
                 session_id = event["session_key"]
@@ -79,12 +86,19 @@ def main():
 
                 writer.write_leaderboard(event)
 
+            for event in rc_events:
+                writer.write_race_control(event)
+
             if events:
                 consumer.commit()
+
+            if rc_events:
+                race_control_consumer.commit()
 
         except Exception as e:
             print(f"[ERROR] Redis writer failed: {e}", file=sys.stderr)
 
+    race_control_consumer.close()
     consumer.close()
     print("Redis Writer Service stopped cleanly.")
 

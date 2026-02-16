@@ -1,20 +1,51 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import Image from "next/image"
 import { fetchPrediction } from "@/lib/fetcher"
 import { AIInsight } from "@/lib/types"
-import { DRIVER_GRADIENTS, DEFAULT_GRADIENT } from "@/lib/teamGradients"
-import { TEAM_MAP } from "@/lib/driverMeta"
+import { DRIVER_CODE_MAP } from "@/lib/driverMeta"
 
 type Props = {
   sessionId: number
   selectedDrivers: string[]
 }
 
+type DriverLogoProps = {
+  driver: string
+  className?: string
+}
+
 const BUTTON_GRADIENT =
   "linear-gradient(135deg, #22d3ee 0%, #3b82f6 55%, #2563eb 100%)"
+
+function DriverLogo({ driver, className }: DriverLogoProps) {
+  const code = DRIVER_CODE_MAP[driver] ?? driver
+  const candidates = [
+    `/driverLogos/${code}.png`,
+    `/driverLogos/${code}.jpg`,
+    `/driverLogos/${driver}.png`,
+    `/driverLogos/${driver}.jpg`,
+  ]
+  const [index, setIndex] = useState(0)
+  const src = candidates[index]
+
+  return (
+    <div className={`relative h-full w-full bg-black/20 ${className ?? ""}`}>
+      <Image
+        src={src}
+        alt={`${code} logo`}
+        fill
+        sizes="(max-width: 768px) 20vw, 12vw"
+        className="object-contain p-2"
+        onError={() => {
+          setIndex((prev) => Math.min(prev + 1, candidates.length - 1))
+        }}
+      />
+    </div>
+  )
+}
 
 export default function AIPanel({
   sessionId,
@@ -40,34 +71,29 @@ export default function AIPanel({
   const left = selectedDrivers[0]
   const right = selectedDrivers[1]
   const result: AIInsight | null = mutation.data ?? null
-  const leftTeam = left ? TEAM_MAP[left] : undefined
-  const rightTeam = right ? TEAM_MAP[right] : undefined
-  const leftGradient = left
-    ? DRIVER_GRADIENTS[leftTeam ?? ""] ?? DEFAULT_GRADIENT
-    : DEFAULT_GRADIENT
-  const rightGradientBase = right
-    ? DRIVER_GRADIENTS[rightTeam ?? ""] ?? DEFAULT_GRADIENT
-    : DEFAULT_GRADIENT
-  const rightGradient = rightGradientBase.replace("to right", "to left")
-  const darkOverlay = "linear-gradient(rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.38))"
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-lg bg-gray-950 text-gray-200">
       <div className="relative h-[45%] px-4 pt-4">
         <div className="relative flex h-full items-stretch">
-          <div
-            className="relative flex-1 overflow-hidden rounded-l-md"
-            style={{
-              background: `${darkOverlay}, ${leftGradient}`,
-            }}
-          >
+          <div className="relative flex flex-1 overflow-hidden rounded-l-md bg-gray-900">
             {left && (
-              <Image
-                src={`/portraits/${left}.jpg`}
-                alt={`Driver ${left}`}
-                fill
-                className="object-contain object-right opacity-85"
-              />
+              <>
+                <DriverLogo
+                  key={`left-logo-${left}`}
+                  driver={left}
+                  className="border-r border-white/10"
+                />
+                <div className="relative h-full w-full">
+                  <Image
+                    src={`/portraits/${left}.jpg`}
+                    alt={`Driver ${left}`}
+                    fill
+                    sizes="(max-width: 768px) 20vw, 12vw"
+                    className="object-contain object-right opacity-90"
+                  />
+                </div>
+              </>
             )}
             {!left && (
               <div className="absolute inset-0 flex items-center justify-center text-xs tracking-wider text-gray-500">
@@ -76,19 +102,24 @@ export default function AIPanel({
             )}
           </div>
 
-          <div
-            className="relative flex-1 overflow-hidden rounded-r-md"
-            style={{
-              background: `${darkOverlay}, ${rightGradient}`,
-            }}
-          >
+          <div className="relative flex flex-1 overflow-hidden rounded-r-md bg-gray-900">
             {right && (
-              <Image
-                src={`/portraits/${right}.jpg`}
-                alt={`Driver ${right}`}
-                fill
-                className="object-contain object-left opacity-85"
-              />
+              <>
+                <div className="relative h-full w-full">
+                  <Image
+                    src={`/portraits/${right}.jpg`}
+                    alt={`Driver ${right}`}
+                    fill
+                    sizes="(max-width: 768px) 20vw, 12vw"
+                    className="object-contain object-left opacity-90"
+                  />
+                </div>
+                <DriverLogo
+                  key={`right-logo-${right}`}
+                  driver={right}
+                  className="border-l border-white/10"
+                />
+              </>
             )}
             {!right && (
               <div className="absolute inset-0 flex items-center justify-center text-xs tracking-wider text-gray-500">
