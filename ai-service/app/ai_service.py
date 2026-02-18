@@ -13,10 +13,12 @@ class AIStrategyService:
         self,
         session_id: int,
         driver_numbers: list[int],
+        simulation_id: str | None = None,
     ) -> dict:
         snapshot = self.snapshot_builder.build_snapshot(
             session_id=session_id,
             driver_numbers=driver_numbers,
+            simulation_id=simulation_id,
         )
 
         result = self.engine.predict(

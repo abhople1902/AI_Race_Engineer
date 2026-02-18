@@ -1,3 +1,6 @@
 confluent-kafka
 redis>=5.0.0
 requests
+fastapi
+uvicorn
+pydantic

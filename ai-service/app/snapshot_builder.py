@@ -17,15 +17,17 @@ class AISnapshotBuilder:
         self,
         session_id: int,
         driver_numbers: List[int],
+        simulation_id: str | None = None,
     ) -> Dict[str, Any]:
-        session_meta = self._get_session_meta(session_id)
-        leaderboard = self._get_full_leaderboard(session_id)
+        session_meta = self._get_session_meta(session_id, simulation_id)
+        leaderboard = self._get_full_leaderboard(session_id, simulation_id)
 
         drivers_block = [
             self._build_driver_block(
                 session_id=session_id,
                 driver_number=driver_number,
                 session_lap=session_meta["lap"],
+                simulation_id=simulation_id,
             )
             for driver_number in driver_numbers
         ]
@@ -46,11 +48,21 @@ class AISnapshotBuilder:
             "leaderboard_context": leaderboard_context,
         }
 
+    def _prefix(self, session_id: int, simulation_id: str | None) -> str:
+        if simulation_id:
+            return f"sim:{simulation_id}:session:{session_id}"
+        return f"live:session:{session_id}"
+
     # -----------------------------
     # Session
     # -----------------------------
-    def _get_session_meta(self, session_id: int) -> Dict[str, int]:
-        meta = self.redis.hgetall(f"session:{session_id}:meta")
+    def _get_session_meta(
+        self,
+        session_id: int,
+        simulation_id: str | None,
+    ) -> Dict[str, int]:
+        prefix = self._prefix(session_id, simulation_id)
+        meta = self.redis.hgetall(f"{prefix}:meta")
         if not meta:
             raise RuntimeError("Session meta missing")
 
@@ -67,12 +79,14 @@ class AISnapshotBuilder:
         session_id: int,
         driver_number: int,
         session_lap: int,
+        simulation_id: str | None,
     ) -> Dict[str, Any]:
+        prefix = self._prefix(session_id, simulation_id)
         driver = self.redis.hgetall(
-            f"session:{session_id}:driver:{driver_number}"
+            f"{prefix}:driver:{driver_number}"
         )
         stint = self.redis.hgetall(
-            f"session:{session_id}:driver:{driver_number}:stint"
+            f"{prefix}:driver:{driver_number}:stint"
         )
 
         if not driver:
@@ -118,9 +132,11 @@ class AISnapshotBuilder:
     def _get_full_leaderboard(
         self,
         session_id: int,
+        simulation_id: str | None,
     ) -> List[Dict[str, Any]]:
+        prefix = self._prefix(session_id, simulation_id)
         raw = self.redis.zrange(
-            f"session:{session_id}:leaderboard",
+            f"{prefix}:leaderboard",
             0,
             -1,
             withscores=True,
@@ -128,7 +144,7 @@ class AISnapshotBuilder:
 
         leaderboard = []
         for driver_str, position in raw:
-            driver_key = f"session:{session_id}:driver:{driver_str}"
+            driver_key = f"{prefix}:driver:{driver_str}"
             driver = self.redis.hgetall(driver_key)
             if not driver:
                 continue

@@ -6,22 +6,25 @@ import { LeaderboardEntry, LeaderboardResponse, TyreCompound } from "@/lib/types
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const sessionKey = searchParams.get("session_key")
+  const simulationId = searchParams.get("simulation_id")
 
-  if (!sessionKey) {
+  if (!sessionKey || !simulationId) {
     return NextResponse.json(
-      { error: "session_key is required" },
+      { error: "session_key and simulation_id are required" },
       { status: 400 }
     )
   }
 
+  const prefix = `sim:${simulationId}:session:${sessionKey}`
+
   // 1. Read session meta
-  const metaKey = `session:${sessionKey}:meta`
+  const metaKey = `${prefix}:meta`
   const meta = await redis.hgetall(metaKey)
 
   const timestamp = meta.last_event_ts ?? new Date().toISOString()
 
   // 2. Read leaderboard ordering
-  const leaderboardKey = `session:${sessionKey}:leaderboard`
+  const leaderboardKey = `${prefix}:leaderboard`
   const zset = await redis.zrange(leaderboardKey, 0, -1, "WITHSCORES")
 
   // zset = [driver, pos, driver, pos, ...]
@@ -40,7 +43,7 @@ export async function GET(req: Request) {
 
   // 3. Build leaderboard entries
   for (const { driver, position } of orderedDrivers) {
-    const driverKey = `session:${sessionKey}:driver:${driver}`
+    const driverKey = `${prefix}:driver:${driver}`
     const data = await redis.hgetall(driverKey)
 
     if (!data || data.status !== "RUNNING") {
@@ -49,7 +52,7 @@ export async function GET(req: Request) {
 
     const gap = Number(data.gap_to_leader)
 
-    const stintKey = `session:${sessionKey}:driver:${driver}:stint`
+    const stintKey = `${prefix}:driver:${driver}:stint`
     const stint = await redis.hgetall(stintKey)
 
     const rawCompound = stint?.compound?.toUpperCase()

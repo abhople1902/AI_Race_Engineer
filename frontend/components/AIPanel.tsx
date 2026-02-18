@@ -10,6 +10,7 @@ import { DRIVER_CODE_MAP } from "@/lib/driverMeta"
 type Props = {
   sessionId: number
   selectedDrivers: string[]
+  simulationId: string | null
 }
 
 type DriverLogoProps = {
@@ -50,10 +51,15 @@ function DriverLogo({ driver, className }: DriverLogoProps) {
 export default function AIPanel({
   sessionId,
   selectedDrivers,
+  simulationId,
 }: Props) {
   const mutation = useMutation({
     mutationFn: (driverNumbers: number[]) =>
-      fetchPrediction(sessionId, driverNumbers),
+      fetchPrediction(
+        sessionId,
+        driverNumbers,
+        simulationId!
+      ),
   })
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export default function AIPanel({
   }, [selectedDrivers, mutation])
 
   const runPrediction = () => {
-    if (selectedDrivers.length === 2) {
+    if (selectedDrivers.length === 2 && simulationId) {
       mutation.mutate(selectedDrivers.map(Number))
     }
   }
@@ -131,7 +137,11 @@ export default function AIPanel({
 
         <button
           onClick={runPrediction}
-          disabled={selectedDrivers.length < 2 || mutation.isPending}
+          disabled={
+            !simulationId ||
+            selectedDrivers.length < 2 ||
+            mutation.isPending
+          }
           className="absolute left-1/2 bottom-[-28px] z-20 h-16 w-16 -translate-x-1/2 rounded-full border border-white/35 shadow-xl transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
           style={{ background: BUTTON_GRADIENT }}
           title="Run Strategy Analysis"

@@ -3,30 +3,34 @@
 import { useQuery } from "@tanstack/react-query"
 import { fetchRaceControl } from "@/lib/fetcher"
 import { RaceControlMessage } from "@/lib/types"
-import { useEffect, useRef, useMemo, useState } from "react"
+import { useEffect, useRef, useMemo } from "react"
 
 type Props = {
   sessionKey: string
+  simulationId: string | null
   isOpen: boolean
   onToggle: () => void
 }
 
 export default function RaceControlDrawer({
   sessionKey,
+  simulationId,
   isOpen,
   onToggle,
 }: Props) {
   const { data } = useQuery({
-    queryKey: ["race-control", sessionKey],
-    queryFn: () => fetchRaceControl(sessionKey),
+    queryKey: ["race-control", sessionKey, simulationId],
+    queryFn: () =>
+      fetchRaceControl(
+        sessionKey,
+        simulationId!
+      ),
     refetchInterval: 3000,
+    enabled: Boolean(simulationId),
   })
 
   const containerRef = useRef<HTMLDivElement>(null)
   const lastSafetyCarRef = useRef<string | null>(null)
-
-  // Track which message is allowed to blink (only newest)
-  const [activeBlinkId, setActiveBlinkId] = useState<string | null>(null)
 
   // Auto-scroll
   useEffect(() => {
@@ -35,23 +39,9 @@ export default function RaceControlDrawer({
     }
   }, [data])
 
-  // Handle blinking logic (only newest critical message blinks)
   useEffect(() => {
     if (!data || data.length === 0) return
-
     const newest = data[0]
-
-    const isCritical =
-      newest.flag === "DOUBLE YELLOW" ||
-      newest.category === "SafetyCar" ||
-      newest.message.includes("VIRTUAL SAFETY CAR")
-
-    if (isCritical) {
-      setActiveBlinkId(newest.date)
-    } else {
-      // Any non-critical message stops blinking
-      setActiveBlinkId(null)
-    }
 
     // Safety car sound (only once per new SC event)
     if (
@@ -62,6 +52,20 @@ export default function RaceControlDrawer({
       const audio = new Audio("/sounds/safetycar.mp3")
       audio.play().catch(() => {})
     }
+  }, [data])
+
+  const activeBlinkId = useMemo(() => {
+    if (!data || data.length === 0) {
+      return null
+    }
+
+    const newest = data[0]
+    const isCritical =
+      newest.flag === "DOUBLE YELLOW" ||
+      newest.category === "SafetyCar" ||
+      newest.message.includes("VIRTUAL SAFETY CAR")
+
+    return isCritical ? newest.date : null
   }, [data])
 
   // Collapse repeated CLEAR

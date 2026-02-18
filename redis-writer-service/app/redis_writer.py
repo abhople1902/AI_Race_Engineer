@@ -5,14 +5,23 @@ class RedisWriter:
         self.redis = redis_client
 
     
+    def _prefix(self, session_id: int, simulation_id: str | None = None) -> str:
+        if simulation_id:
+            return f"sim:{simulation_id}:session:{session_id}"
+        return f"live:session:{session_id}"
+
+
+    
     def write_stint_state(
         self,
         session_id: int,
         driver_number: int,
         stint: dict,
         lap_number: int,
+        simulation_id: str | None = None,
     ):
-        key = f"session:{session_id}:driver:{driver_number}:stint"
+        prefix = self._prefix(session_id, simulation_id)
+        key = f"{prefix}:driver:{driver_number}:stint"
 
         self.redis.hset(
             key,
@@ -26,12 +35,13 @@ class RedisWriter:
         )
 
 
-    def write_race_control(self, event: dict):
+    def write_race_control(self, event: dict, simulation_id: str | None = None):
         session_id = event.get("session_key")
         if session_id is None:
             return
 
-        key = f"session:{session_id}:race_control"
+        prefix = self._prefix(session_id, simulation_id)
+        key = f"{prefix}:race_control"
 
         pipe = self.redis.pipeline(transaction=True)
 
@@ -42,13 +52,14 @@ class RedisWriter:
 
 
 
-    def write_leaderboard(self, event: dict):
+    def write_leaderboard(self, event: dict, simulation_id: str | None = None):
         session_id = event.get("session_key")
         if session_id is None:
             raise ValueError("Leaderboard event missing session_key")
 
-        leaderboard_key = f"session:{session_id}:leaderboard"
-        meta_key = f"session:{session_id}:meta"
+        prefix = self._prefix(session_id, simulation_id)
+        leaderboard_key = f"{prefix}:leaderboard"
+        meta_key = f"{prefix}:meta"
 
         active_drivers = {
             str(entry["driver_number"])
@@ -67,7 +78,7 @@ class RedisWriter:
 
             for driver in retired_drivers:
                 pipe.hset(
-                    f"session:{session_id}:driver:{driver}",
+                    f"{prefix}:driver:{driver}",
                     mapping={
                         "status": "RETIRED",
                         "updated_at": event["event_time"],
@@ -83,7 +94,7 @@ class RedisWriter:
                 {driver_number: entry["position"]}
             )
 
-            driver_key = f"session:{session_id}:driver:{driver_number}"
+            driver_key = f"{prefix}:driver:{driver_number}"
             pipe.hset(
                 driver_key,
                 mapping={

@@ -3,6 +3,7 @@ import traceback
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from redis import Redis
+from typing import Optional
 
 from app.ai_service import AIStrategyService
 from app.strategy_engine import StrategyEngine
@@ -23,6 +24,7 @@ service = AIStrategyService(redis, engine)
 class PredictionRequest(BaseModel):
     session_id: int
     drivers: list[int]
+    simulation_id: Optional[str] = None
 
 
 @app.post("/predict")
@@ -37,6 +39,7 @@ def predict(req: PredictionRequest):
         result = service.predict(
             session_id=req.session_id,
             driver_numbers=req.drivers,
+            simulation_id=req.simulation_id,
         )
         return result
     except Exception as e:
