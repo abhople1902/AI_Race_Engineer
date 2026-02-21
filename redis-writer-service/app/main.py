@@ -232,47 +232,63 @@ def run_live_loop():
 
     current_session_id = None
 
-    while current_mode == ServiceMode.LIVE:
-        events = consumer.poll_batch(max_messages=200, timeout=1.0)
-        rc_events = race_control_consumer.poll_batch(max_messages=200, timeout=0.5)
+    try:
+        while current_mode == ServiceMode.LIVE:
+            # Check mode before polling to avoid processing messages after mode change
+            if current_mode != ServiceMode.LIVE:
+                break
+                
+            events = consumer.poll_batch(max_messages=200, timeout=1.0)
+            
+            # Check mode again after polling
+            if current_mode != ServiceMode.LIVE:
+                break
+                
+            rc_events = race_control_consumer.poll_batch(max_messages=200, timeout=0.5)
 
-        for event in events:
-            session_id = event["session_key"]
-            lap_number = event["lap_number"]
+            # Final check before processing
+            if current_mode != ServiceMode.LIVE:
+                break
 
-            if current_session_id != session_id:
-                stint_ingestor.load_session_stints(session_id)
-                current_session_id = session_id
+            for event in events:
+                session_id = event["session_key"]
+                lap_number = event["lap_number"]
 
-            for entry in event["standings"]:
-                driver_number = entry["driver_number"]
+                if current_session_id != session_id:
+                    stint_ingestor.load_session_stints(session_id)
+                    current_session_id = session_id
 
-                stint = stint_ingestor.get_current_stint(
-                    driver_number=driver_number,
-                    lap_number=lap_number,
-                )
+                for entry in event["standings"]:
+                    driver_number = entry["driver_number"]
 
-                if stint is not None:
-                    writer.write_stint_state(
-                        session_id=session_id,
+                    stint = stint_ingestor.get_current_stint(
                         driver_number=driver_number,
-                        stint=stint,
                         lap_number=lap_number,
                     )
 
-            writer.write_leaderboard(event)
+                    if stint is not None:
+                        writer.write_stint_state(
+                            session_id=session_id,
+                            driver_number=driver_number,
+                            stint=stint,
+                            lap_number=lap_number,
+                        )
 
-        for event in rc_events:
-            writer.write_race_control(event)
+                writer.write_leaderboard(event)
 
-        if events:
-            consumer.commit()
+            for event in rc_events:
+                writer.write_race_control(event)
 
-        if rc_events:
-            race_control_consumer.commit()
+            if events:
+                consumer.commit()
 
-    consumer.close()
-    race_control_consumer.close()
+            if rc_events:
+                race_control_consumer.commit()
+    finally:
+        # Ensure consumers are always closed
+        consumer.close()
+        race_control_consumer.close()
+        print("[INFO] Live loop consumers closed")
 
 
 # -------------------------
@@ -291,8 +307,8 @@ class ReplayRequest(BaseModel):
 def start_replay(req: ReplayRequest):
     global current_mode, live_thread
 
-    if current_mode != ServiceMode.LIVE:
-        return {"error": "Service not in LIVE mode"}
+    # if current_mode != ServiceMode.LIVE:
+    #     return {"error": "Service not in LIVE mode"}
 
     # Switch mode
     current_mode = ServiceMode.REPLAY
@@ -313,9 +329,7 @@ def start_replay(req: ReplayRequest):
         simulation_id=simulation_id,
     )
 
-    runner.run(writer, redis_client)
-
-    current_mode = ServiceMode.IDLE
+    threading.Thread(target=runner.run, args=(writer, redis_client), daemon=True).start()
 
     return {"simulation_id": simulation_id}
 

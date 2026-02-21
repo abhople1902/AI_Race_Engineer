@@ -118,27 +118,27 @@ services:
       - f1-network
 
 
-  kafka-init:
-    image: confluentinc/cp-kafka:7.8.3
-    depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    networks:
-      - f1-network
-    command: |
-      "
-      echo 'Waiting for Kafka...' &&
-      cub kafka-ready -b kafka:9092 1 30 &&
-      echo 'Creating topics...' &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.intervals.raw --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.positions.raw --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.laps.raw --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.pit.raw --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.race_control.raw --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.leaderboard.events --partitions 6 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.intervals.normalized --partitions 6 --replication-factor 1
-      "
+  # kafka-init:
+  #   image: confluentinc/cp-kafka:7.8.3
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   entrypoint: ["/bin/sh", "-c"]
+  #   networks:
+  #     - f1-network
+  #   command: |
+  #     "
+  #     echo 'Waiting for Kafka...' &&
+  #     cub kafka-ready -b kafka:9092 1 30 &&
+  #     echo 'Creating topics...' &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.intervals.raw --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.positions.raw --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.laps.raw --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.pit.raw --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.race_control.raw --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.leaderboard.events --partitions 6 --replication-factor 1 &&
+  #     kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic f1.intervals.normalized --partitions 6 --replication-factor 1
+  #     "
 
 
 
