@@ -17,5 +17,8 @@ RACE_CONTROL_TOPIC = os.getenv(
     "f1.race_control.raw"
 )
 
+KAFKA_API_KEY = os.getenv("KAFKA_API_KEY")
+KAFKA_API_SECRET = os.getenv("KAFKA_API_SECRET")
+
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
