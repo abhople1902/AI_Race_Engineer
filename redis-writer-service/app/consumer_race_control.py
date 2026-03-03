@@ -2,13 +2,17 @@ import json
 from typing import Dict, Any, List
 
 from confluent_kafka import Consumer, Message
-from app.settings import KAFKA_BOOTSTRAP_SERVERS, RACE_CONTROL_TOPIC
+from app.settings import KAFKA_BOOTSTRAP_SERVERS, RACE_CONTROL_TOPIC, KAFKA_API_KEY, KAFKA_API_SECRET
 
 
 class RaceControlConsumer:
     def __init__(self, group_id: str):
         self.consumer = Consumer({
             "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanism": "PLAIN",
+            "sasl.username": KAFKA_API_KEY,
+            "sasl.password": KAFKA_API_SECRET,
             "group.id": group_id,
             "auto.offset.reset": "earliest",
             "enable.auto.commit": False,

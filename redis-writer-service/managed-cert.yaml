@@ -1,0 +1,8 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: f1-cert
+  namespace: f1-backend
+spec:
+  domains:
+    - api.ai-race-engineer.me

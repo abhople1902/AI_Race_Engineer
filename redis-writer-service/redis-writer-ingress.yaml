@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redis-writer-ingress
+  namespace: f1-backend
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "f1-global-ip"
+    networking.gke.io/managed-certificates: "f1-cert"
+spec:
+  rules:
+    - host: api.ai-race-engineer.me
+      http:
+        paths:
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: redis-writer-service
+                port:
+                  number: 80

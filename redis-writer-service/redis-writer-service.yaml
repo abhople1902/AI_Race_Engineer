@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-writer-service
+  namespace: f1-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: redis-writer
+  ports:
+    - port: 80
+      targetPort: 8001
