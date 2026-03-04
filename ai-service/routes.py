@@ -11,7 +11,7 @@ from app.strategy_engine import StrategyEngine
 
 app = FastAPI(title="F1 Strategy AI")
 
-redis = Redis(host="localhost", port=6379, decode_responses=True)
+redis = Redis(host="10.39.240.4", port=6379, decode_responses=True)
 
 engine = StrategyEngine(
     model_name="mistralai/mistral-7b-instruct",

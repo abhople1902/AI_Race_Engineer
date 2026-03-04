@@ -4,7 +4,7 @@ import zlib
 import threading
 import heapq
 from confluent_kafka import Consumer, TopicPartition
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.stint_ingestor import StintIngestor
 from app.settings import OPENF1_BASE_URL
@@ -48,6 +48,23 @@ class ReplayRunner:
         self.sequence = 0
         self.stop_event = threading.Event()
         self.loader_finished = False
+        self.stop_requested = False
+
+    def request_stop(self):
+        self.stop_requested = True
+        self.stop_event.set()
+
+    def _status_key(self) -> str:
+        return f"sim:{self.simulation_id}:session:{self.session_key}:replay_status"
+
+    def _set_status(self, redis_client, status: str, detail: str | None = None):
+        payload = {
+            "status": status,
+            "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        if detail:
+            payload["detail"] = detail
+        redis_client.hset(self._status_key(), mapping=payload)
 
     # ------------------------------------------------
 
@@ -246,40 +263,52 @@ class ReplayRunner:
     def run(self, writer, redis_client):
 
         print("[REPLAY] Starting replay run", flush=True)
+        self._set_status(redis_client, "RUNNING")
 
-        metadata = self.consumer.list_topics(timeout=10)
-        lb_meta = metadata.topics.get(LEADERBOARD_TOPIC)
-        rc_meta = metadata.topics.get(RACE_CONTROL_TOPIC)
+        try:
+            metadata = self.consumer.list_topics(timeout=10)
+            lb_meta = metadata.topics.get(LEADERBOARD_TOPIC)
+            rc_meta = metadata.topics.get(RACE_CONTROL_TOPIC)
 
-        if not lb_meta or not rc_meta:
-            print("[REPLAY] Topics missing", flush=True)
+            if not lb_meta or not rc_meta:
+                print("[REPLAY] Topics missing", flush=True)
+                self._set_status(redis_client, "FAILED", "Topics missing")
+                return
+
+            lb_partition = self._partition_for_session(len(lb_meta.partitions))
+            rc_partition = self._partition_for_session(len(rc_meta.partitions))
+
+            assignments = [
+                self._resolve_leaderboard_start_tp(lb_partition),
+                self._resolve_race_control_start_tp(rc_partition),
+            ]
+
+            self.consumer.assign(assignments)
+
+            loader_thread = threading.Thread(target=self._loader_loop, daemon=True)
+            emitter_thread = threading.Thread(
+                target=self._emitter_loop,
+                args=(writer,),
+                daemon=True
+            )
+
+            loader_thread.start()
+            emitter_thread.start()
+
+            emitter_thread.join()
+            self.stop_event.set()
+            loader_thread.join()
+
+            if self.stop_requested:
+                self._set_status(redis_client, "STOPPED")
+                print("[REPLAY] Replay stopped by request", flush=True)
+            else:
+                self._set_status(redis_client, "COMPLETED")
+                print("[REPLAY] Replay complete", flush=True)
+        except Exception as exc:
+            self._set_status(redis_client, "FAILED", str(exc))
+            print(f"[REPLAY] Failed: {exc}", flush=True)
+            raise
+        finally:
+            self.stop_event.set()
             self.consumer.close()
-            return
-
-        lb_partition = self._partition_for_session(len(lb_meta.partitions))
-        rc_partition = self._partition_for_session(len(rc_meta.partitions))
-
-        assignments = [
-            self._resolve_leaderboard_start_tp(lb_partition),
-            self._resolve_race_control_start_tp(rc_partition),
-        ]
-
-        self.consumer.assign(assignments)
-
-        loader_thread = threading.Thread(target=self._loader_loop, daemon=True)
-        emitter_thread = threading.Thread(
-            target=self._emitter_loop,
-            args=(writer,),
-            daemon=True
-        )
-
-        loader_thread.start()
-        emitter_thread.start()
-
-        emitter_thread.join()
-        self.stop_event.set()
-        loader_thread.join()
-
-        self.consumer.close()
-
-        print("[REPLAY] Replay complete", flush=True)

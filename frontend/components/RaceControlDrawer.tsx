@@ -150,7 +150,7 @@ export default function RaceControlDrawer({
           >
             <div className="flex justify-between text-xs opacity-70 mb-1">
               <div className="flex items-center gap-2">
-                <span>L{msg.lap_number ?? "-"}</span>
+                <span>Lap {msg.lap_number ?? "-"}</span>
 
                 {msg.driver_number && (
                   <span className="px-2 py-[2px] rounded bg-gray-700 text-gray-200 text-[10px]">
@@ -171,9 +171,6 @@ export default function RaceControlDrawer({
                 )}
               </div>
 
-              <span>
-                {new Date(msg.date).toLocaleTimeString()}
-              </span>
             </div>
 
             <div className="font-medium">

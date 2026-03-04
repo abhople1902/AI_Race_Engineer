@@ -10,6 +10,7 @@ type Props = {
   data: LeaderboardEntry[]
   selectedDrivers: string[]
   onToggleDriver: (driver: string) => void
+  replayEnded: boolean
 }
 
 const MAX_DRIVERS = 20
@@ -19,13 +20,26 @@ export default function LeaderboardTable({
   data,
   selectedDrivers,
   onToggleDriver,
+  replayEnded,
 }: Props) {
   const rowHeightClass = `h-[calc((100%-${HEADER_HEIGHT_REM}rem)/${MAX_DRIVERS})]`
+  const headerBgClass = replayEnded ? "bg-gray-900/70" : "bg-gray-900"
+  const bodyBgClass = replayEnded ? "bg-gray-950/70" : "bg-gray-950"
 
   return (
-    <div className="h-full rounded-lg border border-gray-800 bg-gray-950">
-      <table className="h-full w-full table-fixed text-sm text-gray-100">
-        <thead className="bg-gray-900 text-gray-300">
+    <div className="relative h-full overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+      {replayEnded && (
+        <div
+          className="pointer-events-none absolute inset-0 z-0 bg-center bg-no-repeat opacity-[0.28]"
+          style={{
+            backgroundImage: "url('/chequered-flag.svg')",
+            backgroundSize: "85%",
+          }}
+        />
+      )}
+
+      <table className="relative z-10 h-full w-full table-fixed text-sm text-gray-100">
+        <thead className={`${headerBgClass} text-gray-300`}>
           <tr className="h-10">
             <th className="px-3 py-1 text-left">Pos</th>
             <th className="px-3 py-1 text-left">Driver</th>
@@ -36,7 +50,7 @@ export default function LeaderboardTable({
           </tr>
         </thead>
 
-        <tbody className="bg-gray-950">
+        <tbody className={bodyBgClass}>
           {data.map((row) => {
             const isSelected = selectedDrivers.includes(
               row.driver_number

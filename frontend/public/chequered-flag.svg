@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Chequered flag">
+  <defs>
+    <pattern id="chk" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="80" height="80" fill="#f8fafc"/>
+      <rect width="40" height="40" fill="#0f172a"/>
+      <rect x="40" y="40" width="40" height="40" fill="#0f172a"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+  <path d="M40 80 C190 20, 330 150, 470 90 C560 55, 650 70, 760 115 L760 425 C650 380, 560 365, 470 395 C330 455, 190 325, 40 385 Z" fill="url(#chk)"/>
+  <path d="M40 80 C190 20, 330 150, 470 90 C560 55, 650 70, 760 115" fill="none" stroke="url(#fade)" stroke-width="12"/>
+</svg>

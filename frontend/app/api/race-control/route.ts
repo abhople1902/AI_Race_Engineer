@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
-import redis from "@/lib/redis"
+
+const REDIS_WRITER_BASE_URL =
+  process.env.REDIS_WRITER_BASE_URL ?? "http://localhost:8001"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -13,11 +15,26 @@ export async function GET(req: Request) {
     )
   }
 
-  const key = `sim:${simulationId}:session:${sessionKey}:race_control`
+  const upstreamUrl = new URL(`${REDIS_WRITER_BASE_URL}/race-control`)
+  upstreamUrl.searchParams.set("session_key", sessionKey)
+  upstreamUrl.searchParams.set("simulation_id", simulationId)
 
-  const messages = await redis.lrange(key, 0, 49)
+  try {
+    const res = await fetch(upstreamUrl.toString(), { method: "GET" })
+    const data = await res.json()
 
-  const parsed = messages.map((m) => JSON.parse(m))
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: data?.error ?? "Race control request failed" },
+        { status: res.status }
+      )
+    }
 
-  return NextResponse.json(parsed)
+    return NextResponse.json(data)
+  } catch {
+    return NextResponse.json(
+      { error: "Race control request failed" },
+      { status: 500 }
+    )
+  }
 }

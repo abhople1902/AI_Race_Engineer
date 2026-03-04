@@ -211,10 +211,12 @@
 
 
 
+import json
 import sys
-import uuid
 import threading
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -228,6 +230,56 @@ from app.settings import REDIS_HOST, REDIS_PORT
 
 
 app = FastAPI()
+active_runners: dict[str, ReplayRunner] = {}
+active_runners_lock = threading.Lock()
+
+DRIVER_CODE_MAP = {
+    "10": "GAS",
+    "43": "COL",
+    "14": "ALO",
+    "18": "STR",
+    "16": "LEC",
+    "44": "HAM",
+    "31": "OCO",
+    "87": "BEA",
+    "5": "BOR",
+    "27": "HUL",
+    "4": "NOR",
+    "81": "PIA",
+    "12": "ANT",
+    "63": "RUS",
+    "6": "HAD",
+    "30": "LAW",
+    "22": "TSU",
+    "1": "VER",
+    "23": "ALB",
+    "55": "SAI",
+}
+
+TEAM_MAP = {
+    "10": "Alpine",
+    "43": "Alpine",
+    "14": "Aston Martin",
+    "18": "Aston Martin",
+    "16": "Ferrari",
+    "44": "Ferrari",
+    "31": "Haas",
+    "87": "Haas",
+    "5": "Kick Sauber",
+    "27": "Kick Sauber",
+    "4": "McLaren",
+    "81": "McLaren",
+    "12": "Mercedes",
+    "63": "Mercedes",
+    "6": "Racing Bulls",
+    "30": "Racing Bulls",
+    "22": "Red Bull",
+    "1": "Red Bull",
+    "23": "Williams",
+    "55": "Williams",
+}
+
+VALID_COMPOUNDS = {"SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET", "UNKNOWN"}
 
 
 # -------------------------
@@ -261,6 +313,96 @@ class ReplayRequest(BaseModel):
     start_time: str
 
 
+class EndReplayRequest(BaseModel):
+    simulation_id: str
+
+
+def _prefix(session_key: str, simulation_id: str | None) -> str:
+    if simulation_id:
+        return f"sim:{simulation_id}:session:{session_key}"
+    return f"live:session:{session_key}"
+
+
+def _status_key(session_key: str, simulation_id: str) -> str:
+    return f"sim:{simulation_id}:session:{session_key}:replay_status"
+
+
+@app.get("/leaderboard")
+def get_leaderboard(session_key: str, simulation_id: str | None = None) -> dict[str, Any]:
+    prefix = _prefix(session_key, simulation_id)
+    meta_key = f"{prefix}:meta"
+    leaderboard_key = f"{prefix}:leaderboard"
+
+    meta = redis_client.hgetall(meta_key)
+    timestamp = meta.get("last_event_ts")
+    if not timestamp:
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    ordered = redis_client.zrange(leaderboard_key, 0, -1, withscores=True)
+
+    leaderboard = []
+    prev_gap = 0.0
+
+    for driver_raw, position_raw in ordered:
+        driver = str(driver_raw)
+        position = int(position_raw)
+
+        driver_key = f"{prefix}:driver:{driver}"
+        data = redis_client.hgetall(driver_key)
+        if not data or data.get("status") != "RUNNING":
+            continue
+
+        try:
+            gap = float(data.get("gap_to_leader", 0.0))
+        except (TypeError, ValueError):
+            gap = 0.0
+
+        stint_key = f"{prefix}:driver:{driver}:stint"
+        stint = redis_client.hgetall(stint_key)
+        raw_compound = str(stint.get("compound", "UNKNOWN")).upper() if stint else "UNKNOWN"
+        tyre_compound = raw_compound if raw_compound in VALID_COMPOUNDS else "UNKNOWN"
+
+        interval = 0.0 if position == 1 else round(gap - prev_gap, 3)
+        prev_gap = gap
+
+        leaderboard.append(
+            {
+                "position": position,
+                "driver_number": driver,
+                "driver_code": DRIVER_CODE_MAP.get(driver, driver),
+                "team": TEAM_MAP.get(driver, "Unknown"),
+                "gap_to_leader": gap,
+                "interval": interval,
+                "tyre_compound": tyre_compound,
+            }
+        )
+
+    response = {
+        "session_key": str(session_key),
+        "timestamp": timestamp,
+        "leaderboard": leaderboard,
+    }
+    if simulation_id:
+        status = redis_client.hget(_status_key(str(session_key), simulation_id), "status")
+        if status:
+            response["replay_status"] = status
+    return response
+
+
+@app.get("/race-control")
+def get_race_control(session_key: str, simulation_id: str | None = None) -> list[dict[str, Any]]:
+    key = f"{_prefix(session_key, simulation_id)}:race_control"
+    messages = redis_client.lrange(key, 0, 49)
+
+    parsed: list[dict[str, Any]] = []
+    for msg in messages:
+        try:
+            parsed.append(json.loads(msg))
+        except Exception:
+            continue
+    return parsed
+
+
 @app.post("/start-replay")
 def start_replay(req: ReplayRequest):
 
@@ -275,15 +417,61 @@ def start_replay(req: ReplayRequest):
         simulation_id=simulation_id,
     )
 
+    with active_runners_lock:
+        active_runners[simulation_id] = runner
+
+    def _run_and_cleanup():
+        try:
+            runner.run(writer, redis_client)
+        finally:
+            with active_runners_lock:
+                active_runners.pop(simulation_id, None)
+
     # Run in background thread (non-blocking API)
     threading.Thread(
-        target=runner.run,
-        args=(writer, redis_client),
+        target=_run_and_cleanup,
         daemon=True
     ).start()
-    # runner.run(writer, redis_client)
 
     return {"simulation_id": simulation_id}
+
+
+@app.post("/end-replay")
+def end_replay(req: EndReplayRequest):
+    with active_runners_lock:
+        runner = active_runners.get(req.simulation_id)
+
+    if runner is None:
+        return {"simulation_id": req.simulation_id, "status": "NOT_RUNNING"}
+
+    runner.request_stop()
+    return {"simulation_id": req.simulation_id, "status": "STOP_REQUESTED"}
+
+
+@app.get("/replay-status")
+def replay_status(session_key: str, simulation_id: str):
+    key = _status_key(session_key, simulation_id)
+    payload = redis_client.hgetall(key)
+
+    if payload:
+        return {
+            "simulation_id": simulation_id,
+            "session_key": session_key,
+            "status": payload.get("status", "UNKNOWN"),
+            "updated_at": payload.get("updated_at"),
+            "detail": payload.get("detail"),
+        }
+
+    with active_runners_lock:
+        is_running = simulation_id in active_runners
+
+    return {
+        "simulation_id": simulation_id,
+        "session_key": session_key,
+        "status": "RUNNING" if is_running else "UNKNOWN",
+        "updated_at": None,
+        "detail": None,
+    }
 
 
 # -------------------------

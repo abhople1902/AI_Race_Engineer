@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     )
   }
 
-  const upstreamUrl = new URL(`${REDIS_WRITER_BASE_URL}/leaderboard`)
+  const upstreamUrl = new URL(`${REDIS_WRITER_BASE_URL}/replay-status`)
   upstreamUrl.searchParams.set("session_key", sessionKey)
   upstreamUrl.searchParams.set("simulation_id", simulationId)
 
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: data?.error ?? "Leaderboard request failed" },
+        { error: data?.error ?? "Replay status request failed" },
         { status: res.status }
       )
     }
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     return NextResponse.json(data)
   } catch {
     return NextResponse.json(
-      { error: "Leaderboard request failed" },
+      { error: "Replay status request failed" },
       { status: 500 }
     )
   }
