@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   const body = await req.json()
 
   try {
-    const res = await fetch("http://localhost:8000/predict", {
+    const res = await fetch(`${process.env.AI_SERVICE_URL}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

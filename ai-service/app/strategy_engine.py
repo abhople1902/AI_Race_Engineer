@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -60,7 +61,19 @@ Return JSON with this exact schema:
 
 class StrategyEngine:
     def __init__(self, model_name: str, temperature: float = 0.2):
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature)
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        llm_kwargs: Dict[str, Any] = {
+            "model": model_name,
+            "temperature": temperature,
+        }
+        if base_url:
+            llm_kwargs["base_url"] = base_url
+        if api_key:
+            llm_kwargs["api_key"] = api_key
+
+        self.llm = ChatOpenAI(**llm_kwargs)
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", SYSTEM_PROMPT),

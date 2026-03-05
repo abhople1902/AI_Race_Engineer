@@ -1,8 +1,8 @@
+import os
 import traceback
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from redis import Redis
 from typing import Optional
 
 from app.ai_service import AIStrategyService
@@ -11,14 +11,22 @@ from app.strategy_engine import StrategyEngine
 
 app = FastAPI(title="F1 Strategy AI")
 
-redis = Redis(host="10.39.240.4", port=6379, decode_responses=True)
+REDIS_WRITER_BASE_URL = os.getenv(
+    "REDIS_WRITER_BASE_URL",
+    "http://localhost:8001",
+)
+MODEL_NAME = os.getenv(
+    "MODEL_NAME",
+    "mistralai/mistral-7b-instruct",
+)
+MODEL_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE", "0.2"))
 
 engine = StrategyEngine(
-    model_name="mistralai/mistral-7b-instruct",
-    temperature=0.2,
+    model_name=MODEL_NAME,
+    temperature=MODEL_TEMPERATURE,
 )
 
-service = AIStrategyService(redis, engine)
+service = AIStrategyService(REDIS_WRITER_BASE_URL, engine)
 
 
 class PredictionRequest(BaseModel):

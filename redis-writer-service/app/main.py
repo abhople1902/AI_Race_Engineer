@@ -356,11 +356,32 @@ def get_leaderboard(session_key: str, simulation_id: str | None = None) -> dict[
             gap = float(data.get("gap_to_leader", 0.0))
         except (TypeError, ValueError):
             gap = 0.0
+        try:
+            interval_to_ahead = float(data.get("interval_to_ahead", 0.0))
+        except (TypeError, ValueError):
+            interval_to_ahead = 0.0
+        try:
+            lap_number = int(data.get("lap_number", meta.get("lap", 0)))
+        except (TypeError, ValueError):
+            lap_number = 0
 
         stint_key = f"{prefix}:driver:{driver}:stint"
         stint = redis_client.hgetall(stint_key)
         raw_compound = str(stint.get("compound", "UNKNOWN")).upper() if stint else "UNKNOWN"
         tyre_compound = raw_compound if raw_compound in VALID_COMPOUNDS else "UNKNOWN"
+
+        stint_payload = None
+        if stint:
+            try:
+                stint_payload = {
+                    "stint_number": int(stint.get("stint_number", 0)),
+                    "compound": stint.get("compound", "UNKNOWN"),
+                    "stint_lap_start": int(stint.get("stint_lap_start", 0)),
+                    "last_pit_lap": int(stint.get("last_pit_lap", 0)),
+                    "tyre_age_at_start": int(stint.get("tyre_age_at_start", 0)),
+                }
+            except (TypeError, ValueError):
+                stint_payload = None
 
         interval = 0.0 if position == 1 else round(gap - prev_gap, 3)
         prev_gap = gap
@@ -373,13 +394,28 @@ def get_leaderboard(session_key: str, simulation_id: str | None = None) -> dict[
                 "team": TEAM_MAP.get(driver, "Unknown"),
                 "gap_to_leader": gap,
                 "interval": interval,
+                "interval_to_ahead": interval_to_ahead,
+                "lap_number": lap_number,
                 "tyre_compound": tyre_compound,
+                "stint": stint_payload,
             }
         )
+
+    try:
+        lap = int(meta.get("lap", 0))
+    except (TypeError, ValueError):
+        lap = 0
+    try:
+        cars_running = int(meta.get("cars_running", len(leaderboard)))
+    except (TypeError, ValueError):
+        cars_running = len(leaderboard)
 
     response = {
         "session_key": str(session_key),
         "timestamp": timestamp,
+        "lap": lap,
+        "cars_running": cars_running,
+        "leader_driver_number": meta.get("leader_driver_number"),
         "leaderboard": leaderboard,
     }
     if simulation_id:

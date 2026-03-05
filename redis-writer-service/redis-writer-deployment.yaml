@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis-writer
-          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v4
+          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v5
           ports:
             - containerPort: 8001
           env:
