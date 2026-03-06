@@ -29,7 +29,7 @@ type SmoothImageProps = {
 }
 
 const BUTTON_GRADIENT =
-  "linear-gradient(135deg, #22d3ee 0%, #3b82f6 55%, #2563eb 100%)"
+  "linear-gradient(135deg,rgb(108, 112, 112) 0%,rgb(43, 44, 45) 55%,rgb(14, 15, 15) 100%)"
 
 function SmoothImage({
   src,

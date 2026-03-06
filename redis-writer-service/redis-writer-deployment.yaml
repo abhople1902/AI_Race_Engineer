@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis-writer
-          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v2
+          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v10
           ports:
             - containerPort: 8001
           env:
@@ -32,6 +32,6 @@ spec:
                   name: kafka-secret
                   key: api-secret
             - name: REDIS_HOST
-              value: "10.155.35.4"
+              value: "10.39.240.4"
             - name: REDIS_PORT
               value: "6379"

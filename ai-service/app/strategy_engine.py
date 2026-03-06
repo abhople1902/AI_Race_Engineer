@@ -1,7 +1,9 @@
+import os
 from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 import json
+import re
 
 
 SYSTEM_PROMPT = """
@@ -60,7 +62,19 @@ Return JSON with this exact schema:
 
 class StrategyEngine:
     def __init__(self, model_name: str, temperature: float = 0.2):
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature)
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        llm_kwargs: Dict[str, Any] = {
+            "model": model_name,
+            "temperature": temperature,
+        }
+        if base_url:
+            llm_kwargs["base_url"] = base_url
+        if api_key:
+            llm_kwargs["api_key"] = api_key
+
+        self.llm = ChatOpenAI(**llm_kwargs)
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", SYSTEM_PROMPT),
@@ -111,6 +125,16 @@ class StrategyEngine:
                 raise RuntimeError(f"Missing key: {key}")
 
         pred = data["prediction"]
+        allowed_drivers = list(map(str, driver_numbers))
+        allowed_set = set(allowed_drivers)
+
+        comparison = data.get("comparison")
+        if not isinstance(comparison, list):
+            comparison = allowed_drivers[:2]
+        comparison = [str(x) for x in comparison]
+        if len(comparison) < 2:
+            comparison = allowed_drivers[:2]
+        data["comparison"] = comparison[:2]
 
         # Validate driver_pit_windows
         dpw = pred.get("driver_pit_windows")
@@ -129,7 +153,7 @@ class StrategyEngine:
                     raise RuntimeError(f"Invalid pit window for driver {d}")
 
         # --- Dropping unknown keys ---
-        allowed = set(map(str, driver_numbers))
+        allowed = allowed_set
         pred["driver_pit_windows"] = {
             k: v for k, v in pred["driver_pit_windows"].items()
             if k in allowed
@@ -141,10 +165,21 @@ class StrategyEngine:
             block = pred.get(k)
             if not block or "actor" not in block or "value" not in block:
                 raise RuntimeError(f"Invalid {k} block")
-            if block["actor"] not in list(map(str, driver_numbers)):
-                raise RuntimeError(f"{k}.actor must be one of the compared drivers")
-            if not (0.0 <= block["value"] <= 1.0):
+
+            actor = self._normalize_actor(
+                actor=block.get("actor"),
+                allowed=allowed_set,
+                comparison=data["comparison"],
+                fallback=allowed_drivers[0],
+            )
+            if actor is None:
+                actor = allowed_drivers[0]
+            block["actor"] = actor
+
+            value = self._normalize_probability(block.get("value"))
+            if value is None:
                 raise RuntimeError(f"{k}.value out of range")
+            block["value"] = value
         
         u = pred["undercut_probability"]["value"]
         o = pred["overcut_probability"]["value"]
@@ -159,3 +194,40 @@ class StrategyEngine:
             raise RuntimeError("Invalid confidence value")
 
         return data
+
+    def _normalize_probability(self, value: Any) -> float | None:
+        try:
+            p = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not (0.0 <= p <= 1.0):
+            return None
+        return p
+
+    def _normalize_actor(
+        self,
+        actor: Any,
+        allowed: set[str],
+        comparison: List[str],
+        fallback: str,
+    ) -> str | None:
+        if actor is None:
+            return None
+
+        actor_str = str(actor).strip()
+        if actor_str in allowed:
+            return actor_str
+
+        lower_actor = actor_str.lower().replace(" ", "")
+        if lower_actor in {"drivera", "a", "left"} and len(comparison) >= 1:
+            return comparison[0]
+        if lower_actor in {"driverb", "b", "right"} and len(comparison) >= 2:
+            return comparison[1]
+
+        num_match = re.search(r"\d+", actor_str)
+        if num_match:
+            candidate = str(int(num_match.group(0)))
+            if candidate in allowed:
+                return candidate
+
+        return fallback if fallback in allowed else None

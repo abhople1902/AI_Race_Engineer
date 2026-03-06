@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import Image from "next/image"
 
@@ -10,7 +10,9 @@ import AIPanel from "@/components/AIPanel"
 import LeaderboardTable from "@/components/LeaderboardTable"
 import RaceControlDrawer from "@/components/RaceControlDrawer"
 import {
+  endReplaySession,
   fetchLeaderboard,
+  fetchReplayStatus,
   startReplaySession,
 } from "@/lib/fetcher"
 import { getReplaySessionById } from "@/lib/replaySessions"
@@ -25,6 +27,7 @@ const STICKER_POSITIONS = [
 
 export default function ReplayPage() {
   const params = useParams<{ raceId: string }>()
+  const router = useRouter()
   const raceId = params.raceId
 
   const session = useMemo(
@@ -36,6 +39,7 @@ export default function ReplayPage() {
     useState<string[]>([])
   const [raceControlOpen, setRaceControlOpen] = useState(false)
   const [isStartingReplay, setIsStartingReplay] = useState(false)
+  const [isEndingReplay, setIsEndingReplay] = useState(false)
   const [simulationId, setSimulationId] = useState<string | null>(null)
   const [startError, setStartError] = useState<string | null>(null)
 
@@ -51,6 +55,22 @@ export default function ReplayPage() {
     refetchInterval: 3000,
     enabled: Boolean(session && simulationId),
   })
+
+  const { data: replayStatusData } = useQuery({
+    queryKey: ["replay-status", session?.sessionKey, simulationId],
+    queryFn: () =>
+      fetchReplayStatus(
+        session!.sessionKey,
+        simulationId!
+      ),
+    refetchInterval: 5000,
+    enabled: Boolean(session && simulationId),
+  })
+
+  const replayEnded =
+    replayStatusData?.status === "COMPLETED" ||
+    replayStatusData?.status === "STOPPED" ||
+    replayStatusData?.status === "FAILED"
 
   const toggleDriver = (driver: string) => {
     setSelectedDrivers((prev) => {
@@ -84,6 +104,22 @@ export default function ReplayPage() {
       setStartError("Failed to start replay session")
     } finally {
       setIsStartingReplay(false)
+    }
+  }
+
+  const handleEndReplay = async () => {
+    if (!simulationId) {
+      return
+    }
+
+    setIsEndingReplay(true)
+    try {
+      await endReplaySession(simulationId)
+      router.push("/")
+    } catch {
+      setStartError("Failed to end replay session")
+    } finally {
+      setIsEndingReplay(false)
     }
   }
 
@@ -127,16 +163,17 @@ export default function ReplayPage() {
         )}
 
         {hasReplayStarted && data && (
-          <div className="grid h-full grid-cols-[40%_60%] gap-4 overflow-hidden">
-            <div className="h-full">
+          <div className="grid h-full min-h-0 grid-cols-[40%_60%] gap-4 overflow-hidden">
+            <div className="h-full min-h-0">
               <LeaderboardTable
                 data={data.leaderboard}
                 selectedDrivers={selectedDrivers}
                 onToggleDriver={toggleDriver}
+                replayEnded={replayEnded}
               />
             </div>
 
-            <div className="relative h-full overflow-hidden">
+            <div className="relative h-full min-h-0 overflow-hidden">
               <div className="h-full rounded-lg border border-gray-700">
                 <AIPanel
                   sessionId={Number(session.sessionKey)}
@@ -158,9 +195,19 @@ export default function ReplayPage() {
         )}
       </div>
 
+      {hasReplayStarted && (
+        <button
+          onClick={handleEndReplay}
+          disabled={isEndingReplay}
+          className="absolute right-6 top-6 z-40 rounded-md border border-red-400/50 bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isEndingReplay ? "Ending..." : "End Replay"}
+        </button>
+      )}
+
       {!hasReplayStarted && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 px-6 py-8">
-          <div className="relative max-h-[calc(100vh-4rem)] w-full max-w-3xl overflow-visible rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl">
+        <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-slate-950/35 px-6 py-8">
+          <div className="relative my-2 w-full max-w-3xl overflow-visible rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl">
             <Link
               href="/"
               className="absolute top-4 left-4 z-30 rounded-md border border-white/20 bg-slate-950/70 px-3 py-1.5 text-xs font-medium tracking-wide text-slate-200 transition hover:bg-slate-900"

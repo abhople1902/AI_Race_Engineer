@@ -131,7 +131,7 @@ CLOUD_BOOTSTRAP = "pkc-41p56.asia-south1.gcp.confluent.cloud:9092"
 CLOUD_API_KEY = "L5MXDTE6XXNJ3YMS"
 CLOUD_API_SECRET = "cfltgdYsasS6uTycPZDBqGFYA7uc+6rx+FCYUfxUcHUZt/HtGgmpjM+Q7PLQzGEg"
 
-TOPIC = "f1.race_control.raw"
+TOPIC = "f1.leaderboard.events"
 
 consumer = Consumer({
     "bootstrap.servers": LOCAL_BOOTSTRAP,

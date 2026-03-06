@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server"
 
+const REDIS_WRITER_BASE_URL =
+  process.env.REDIS_WRITER_BASE_URL ?? "http://localhost:8001"
+
 export async function POST(req: Request) {
   const body = await req.json()
 
   try {
-    const res = await fetch("http://localhost:8001/start-replay", {
+    const res = await fetch(`${REDIS_WRITER_BASE_URL}/start-replay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

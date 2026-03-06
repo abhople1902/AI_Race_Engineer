@@ -1,12 +1,10 @@
-from redis import Redis
 from app.snapshot_builder import AISnapshotBuilder
 from app.strategy_engine import StrategyEngine
 
 
 class AIStrategyService:
-    def __init__(self, redis: Redis, engine: StrategyEngine):
-        self.redis = redis
-        self.snapshot_builder = AISnapshotBuilder(redis)
+    def __init__(self, redis_writer_base_url: str, engine: StrategyEngine):
+        self.snapshot_builder = AISnapshotBuilder(redis_writer_base_url)
         self.engine = engine
 
     def predict(
