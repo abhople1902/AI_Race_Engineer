@@ -4,7 +4,7 @@ metadata:
   name: redis-writer
   namespace: f1-backend
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: redis-writer
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis-writer
-          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v5
+          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v10
           ports:
             - containerPort: 8001
           env:

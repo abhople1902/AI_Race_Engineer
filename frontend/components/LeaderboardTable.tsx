@@ -13,33 +13,30 @@ type Props = {
   replayEnded: boolean
 }
 
-const MAX_DRIVERS = 20
-const HEADER_HEIGHT_REM = 2.5
-
 export default function LeaderboardTable({
   data,
   selectedDrivers,
   onToggleDriver,
   replayEnded,
 }: Props) {
-  const rowHeightClass = `h-[calc((100%-${HEADER_HEIGHT_REM}rem)/${MAX_DRIVERS})]`
   const headerBgClass = replayEnded ? "bg-gray-900/70" : "bg-gray-900"
   const bodyBgClass = replayEnded ? "bg-gray-950/70" : "bg-gray-950"
 
   return (
-    <div className="relative h-full overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+    <div className="relative h-full min-h-0 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950">
       {replayEnded && (
         <div
-          className="pointer-events-none absolute inset-0 z-0 bg-center bg-no-repeat opacity-[0.28]"
+          className="pointer-events-none absolute inset-0 z-0 bg-center bg-no-repeat opacity-[0.40]"
           style={{
             backgroundImage: "url('/chequered-flag.svg')",
-            backgroundSize: "85%",
+            backgroundSize: "95%",
+            transform: "scaleX(-1) scaleY(1.3)"
           }}
         />
       )}
 
-      <table className="relative z-10 h-full w-full table-fixed text-sm text-gray-100">
-        <thead className={`${headerBgClass} text-gray-300`}>
+      <table className="relative z-10 w-full table-fixed text-sm text-gray-100">
+        <thead className={`sticky top-0 z-20 ${headerBgClass} text-gray-300`}>
           <tr className="h-10">
             <th className="px-3 py-1 text-left">Pos</th>
             <th className="px-3 py-1 text-left">Driver</th>
@@ -65,7 +62,7 @@ export default function LeaderboardTable({
               <tr
                 key={row.driver_number}
                 onClick={() => onToggleDriver(row.driver_number)}
-                className={`cursor-pointer border-t border-gray-800 transition-all duration-200 ${rowHeightClass} ${
+                className={`h-10 cursor-pointer border-t border-gray-800 transition-all duration-200 ${
                   isSelected
                     ? "ring-2 ring-white scale-[1.01]"
                     : "hover:bg-gray-900/60"

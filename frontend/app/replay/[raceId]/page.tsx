@@ -163,8 +163,8 @@ export default function ReplayPage() {
         )}
 
         {hasReplayStarted && data && (
-          <div className="grid h-full grid-cols-[40%_60%] gap-4 overflow-hidden">
-            <div className="h-full">
+          <div className="grid h-full min-h-0 grid-cols-[40%_60%] gap-4 overflow-hidden">
+            <div className="h-full min-h-0">
               <LeaderboardTable
                 data={data.leaderboard}
                 selectedDrivers={selectedDrivers}
@@ -173,7 +173,7 @@ export default function ReplayPage() {
               />
             </div>
 
-            <div className="relative h-full overflow-hidden">
+            <div className="relative h-full min-h-0 overflow-hidden">
               <div className="h-full rounded-lg border border-gray-700">
                 <AIPanel
                   sessionId={Number(session.sessionKey)}
@@ -206,8 +206,8 @@ export default function ReplayPage() {
       )}
 
       {!hasReplayStarted && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 px-6 py-8">
-          <div className="relative max-h-[calc(100vh-4rem)] w-full max-w-3xl overflow-visible rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl">
+        <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-slate-950/35 px-6 py-8">
+          <div className="relative my-2 w-full max-w-3xl overflow-visible rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl">
             <Link
               href="/"
               className="absolute top-4 left-4 z-30 rounded-md border border-white/20 bg-slate-950/70 px-3 py-1.5 text-xs font-medium tracking-wide text-slate-200 transition hover:bg-slate-900"

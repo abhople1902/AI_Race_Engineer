@@ -158,14 +158,14 @@ export default function RaceControlDrawer({
                   </span>
                 )}
 
-                {msg.category === "SafetyCar" && (
+                {msg.category === "SafetyCar" && !msg.message.includes("VIRTUAL SAFETY CAR") && (
                   <span className="px-2 py-[2px] rounded-full bg-orange-500 text-black text-[10px] font-bold">
                     SC
                   </span>
                 )}
 
                 {msg.message.includes("VIRTUAL SAFETY CAR") && (
-                  <span className="px-2 py-[2px] rounded-full bg-orange-400 text-black text-[10px] font-bold">
+                  <span className="px-2 py-[2px] rounded-full bg-yellow-400 text-black text-[10px] font-bold">
                     VSC
                   </span>
                 )}

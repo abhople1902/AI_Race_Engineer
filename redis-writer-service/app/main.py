@@ -219,6 +219,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
@@ -230,6 +231,20 @@ from app.settings import REDIS_HOST, REDIS_PORT
 
 
 app = FastAPI()
+
+origins = [
+    "https://app.ai-race-engineer.me",
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 active_runners: dict[str, ReplayRunner] = {}
 active_runners_lock = threading.Lock()
 
