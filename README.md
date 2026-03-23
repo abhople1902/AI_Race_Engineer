@@ -2,6 +2,8 @@
 
 An AI-powered race analytics platform inspired by Formula 1 race engineering, designed to process real-time telemetry data, generate insights, and simulate race strategies using scalable backend systems and modern AI integrations.
 
+Check it out here - app.ai-race-engineer.me
+
 ---
 
 ## 📌 Overview
@@ -156,3 +158,8 @@ This project goes beyond basic API calls and explores structured AI integration:
 
 **Ayush Bhople**  
 AI & Backend Developer | iOS Engineer  
+
+
+The website deployed based on this repository is not associated in any way with the Formula 1 companies. F1, FORMULA ONE, FORMULA 1, FORMULA 1 ACADEMY, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.
+
+© 2026 Ayush Bhople
