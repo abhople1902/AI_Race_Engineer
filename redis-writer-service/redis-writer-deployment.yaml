@@ -4,7 +4,7 @@ metadata:
   name: redis-writer
   namespace: f1-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: redis-writer
@@ -15,12 +15,12 @@ spec:
     spec:
       containers:
         - name: redis-writer
-          image: asia-south1-docker.pkg.dev/strat-project19/f1-repo/redis-writer:v10
+          image: asia-southeast1-docker.pkg.dev/strat-migrate1/f1-repo/redis-writer:latest
           ports:
             - containerPort: 8001
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "pkc-41p56.asia-south1.gcp.confluent.cloud:9092"
+              value: "pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092"
             - name: KAFKA_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -32,6 +32,6 @@ spec:
                   name: kafka-secret
                   key: api-secret
             - name: REDIS_HOST
-              value: "10.39.240.4"
+              value: "10.218.177.196"
             - name: REDIS_PORT
               value: "6379"
